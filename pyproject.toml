@@ -1,0 +1,22 @@
+[project]
+name = "sctec-inventory-agent"
+version = "1.0.0"
+description = "Agente de análise de estoque (LangGraph + Gemini + n8n) — SCTEC C1 Agentes de IA"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Francesco Cristiano Cousseau" }]
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=1.0",
+    "langchain-core>=1.0",
+    "langchain-google-genai>=4.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "python-dotenv>=1.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]

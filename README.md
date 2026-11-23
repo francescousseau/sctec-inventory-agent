@@ -16,8 +16,6 @@ SCTEC · C1 · Agentes de IA · T2
 [![Testes](https://img.shields.io/badge/testes-90%20passando-2EA44F?logo=pytest&logoColor=white)](docs/testes.md)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow.svg)](LICENSE)
 
-🎬 **Vídeo demonstrativo:** _cole aqui o link (≤ 5 min)_
-
 </div>
 
 ---
@@ -72,12 +70,13 @@ Toda conclusão é **verificável**: a resposta sempre mostra produto, quantidad
 git clone https://github.com/francescousseau/sctec-inventory-agent.git
 cd sctec-inventory-agent
 
-uv venv -p 3.12                       # cria o .venv
-uv pip install -r requirements.txt    # instala as dependências
+uv sync                               # cria o .venv (Python 3.12) e instala as versões travadas no uv.lock
 cp .env.example .env                  # preencha GOOGLE_API_KEY
 
 ESTOQUE_API_URL=http://127.0.0.1:8000 uv run python -m agente_estoque "Como está o estoque do PRD-001?"
 ```
+
+O `uv sync` lê o `pyproject.toml` (dependências), o `uv.lock` (versões exatas) e o `.python-version` (3.12). O `uv run` mantém o ambiente sincronizado antes de cada comando.
 
 <details>
 <summary><b>Sem uv (pip tradicional)</b></summary>
@@ -88,6 +87,12 @@ source .venv/bin/activate             # Windows: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 cp .env.example .env
 python -m agente_estoque "Como está o estoque do PRD-001?"
+```
+
+O `requirements.txt` é gerado a partir do `uv.lock` (mesmas versões). Depois de mudar dependências no `pyproject.toml`:
+
+```bash
+uv lock && uv export --format requirements-txt --no-hashes --no-emit-project --all-groups -o requirements.txt
 ```
 
 </details>
@@ -398,7 +403,9 @@ sctec-inventory-agent/
 ├── tests/                  # 90 testes (pytest)
 ├── evidencias/             # cenários, execução n8n e prints
 ├── docs/                   # testes, rastreabilidade, roteiro do vídeo
-├── Dockerfile · compose.yaml · requirements.txt · .env.example
+├── pyproject.toml · uv.lock · .python-version   # dependências (uv)
+├── requirements.txt    # gerado do uv.lock (pip e Docker)
+├── Dockerfile · compose.yaml · .env.example
 └── LICENSE
 ```
 
