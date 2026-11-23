@@ -402,7 +402,7 @@ sctec-inventory-agent/
 ├── scripts/executar_cenarios.py
 ├── tests/                  # 90 testes (pytest)
 ├── evidencias/             # cenários, execução n8n e prints
-├── docs/                   # testes, rastreabilidade, roteiro do vídeo
+├── docs/                   # registro de testes e matriz de rastreabilidade
 ├── pyproject.toml · uv.lock · .python-version   # dependências (uv)
 ├── requirements.txt    # gerado do uv.lock (pip e Docker)
 ├── Dockerfile · compose.yaml · .env.example

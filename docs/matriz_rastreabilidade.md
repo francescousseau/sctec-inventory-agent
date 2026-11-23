@@ -12,7 +12,7 @@ Legenda de evidência: ✅ executado neste ambiente · 🟡 executado com simula
 | 5 | Confiabilidade, segurança, supervisão (1,0) | `grafo.py::validar_entrada`; `interpretacao.py::validar_interpretacao`; `config.py` + `.env.example` + `.gitignore`; `respostas.py` | Entrada validada (vazia/longa/controle); saída do LLM validada (código deve existir no texto); falhas → resposta controlada sem classificar; grafo finito + `recursion_limit`; segredos só em env; agente **somente leitura** (sem POST ⇒ sem ação sensível; confirmação humana não se aplica) | ✅ |
 | 6 | Evidências de 3 cenários (1,0) | `scripts/executar_cenarios.py`; `evidencias/`; `docs/testes.md` | 1: PRD-001 baixo · 2: PRD-999 inexistente · 3: PRD-503/API offline. +7 complementares; `evidencias/cenarios_real.md` com Gemini real (11/11) | ✅ |
 | 7 | Documentação / README (1,0) | `README.md` | Objetivo, arquitetura, tecnologias, execução, n8n, testes, limitações | ✅ |
-| 8 | Vídeo ≤ 5 min (1,0) | `docs/roteiro_video.md` | Roteiro cronometrado (4:45) com os 5 elementos | ⏳ gravar |
+| 8 | Vídeo ≤ 5 min (1,0) | Link entregue no AVA | Apresenta os 5 elementos: problema, LangGraph, ferramenta/API, n8n, erro/limite/supervisão | ⏳ gravar |
 
 ## Pontos do enunciado que estavam truncados no Markdown anexo
 Não consegui ler integralmente, então tratei como **propostas minhas** (ajuste se o PDF original disser outra coisa):
