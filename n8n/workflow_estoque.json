@@ -1,0 +1,158 @@
+{
+  "id": "estoqueAgente01",
+  "name": "Estoque - Webhook para Agente LangGraph",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "estoque",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6f1d2c3a-0001-4a00-9000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "6f1d2c3a-0001-4a00-9000-0000000000a1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://agente:8001/analisar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ mensagem: $json.body.mensagem }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "6f1d2c3a-0002-4a00-9000-000000000002",
+      "name": "Agente LangGraph (HTTP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "resposta",
+              "value": "={{ $json.resposta ?? 'O agente de estoque está indisponível no momento.' }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "desfecho",
+              "value": "={{ $json.desfecho ?? 'agente_indisponivel' }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "codigo",
+              "value": "={{ $json.codigo ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "situacao",
+              "value": "={{ $json.situacao ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "requer_atencao",
+              "value": "={{ ['baixo', 'esgotado'].includes($json.situacao) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "a6",
+              "name": "api_consultada",
+              "value": "={{ $json.api_consultada ?? false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "a7",
+              "name": "caminho",
+              "value": "={{ ($json.caminho ?? []).join(' > ') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6f1d2c3a-0003-4a00-9000-000000000003",
+      "name": "Montar resposta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "6f1d2c3a-0004-4a00-9000-000000000004",
+      "name": "Responder ao Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Agente LangGraph (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente LangGraph (HTTP)": {
+      "main": [
+        [
+          {
+            "node": "Montar resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar resposta": {
+      "main": [
+        [
+          {
+            "node": "Responder ao Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": []
+}
