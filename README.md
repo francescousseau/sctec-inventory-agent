@@ -122,14 +122,14 @@ Evidência: `evidencias/n8n_execucao.md`.
 - Limites de atuação: o agente é **somente leitura** (o `POST /produtos` da API não é exposto); pedidos de cadastro/alteração/“ignore as regras” encerram sem consultar a API. Por não haver ação que modifique dados, não há etapa de confirmação humana a demonstrar.
 
 ## 7. Testes
-`python -m pytest -v` (90 testes; os de integração exigem a API em `:8000`) e `python scripts/executar_cenarios.py --llm real` (cenários com entrada, esperado, observado e dados brutos da API). Detalhes e resultados: [`docs/testes.md`](docs/testes.md); matriz de critérios: [`docs/matriz_rastreabilidade.md`](docs/matriz_rastreabilidade.md).
+`python -m pytest -v` (90 testes; os de integração exigem a API em `:8000`) e `python scripts/executar_cenarios.py --llm real` (cenários com entrada, esperado, observado e dados brutos da API; resultado com Gemini real em [`evidencias/cenarios_real.md`](evidencias/cenarios_real.md), 11/11). Detalhes e resultados: [`docs/testes.md`](docs/testes.md); matriz de critérios: [`docs/matriz_rastreabilidade.md`](docs/matriz_rastreabilidade.md).
 
 ## 8. Limitações
 - Consulta **um produto por vez, por código `PRD-XXX`**; perguntas só pelo nome pedem o código (não há busca por nome).
 - Não lista nem compara produtos; não cadastra (decisão de escopo/segurança).
 - Qualidade da interpretação depende do LLM escolhido; a validação em Python impede consultas com códigos que não estejam no texto, mas pode pedir esclarecimento em casos como “prd 1”.
 - Sem autenticação entre n8n e agente (uso didático local).
-- Evidências geradas sem LLM real devem ser refeitas com o seu provedor.
+- Depende da disponibilidade da Gemini API: em picos de demanda ela devolve 503; o agente tenta até 3 vezes com backoff e, se persistir, responde `llm_indisponivel` sem consultar nem classificar.
 
 ## 9. Estrutura
 ```
