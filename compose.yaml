@@ -1,0 +1,40 @@
+services:
+  agente:
+    build: .
+    container_name: sctec-agente-estoque
+    ports:
+      - "8001:8001"
+    environment:
+      ESTOQUE_API_URL: ${ESTOQUE_API_URL:-http://host.docker.internal:8000}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
+      LLM_TIMEOUT_S: ${LLM_TIMEOUT_S:-30}
+      ESTOQUE_TIMEOUT_S: ${ESTOQUE_TIMEOUT_S:-5}
+      ESTOQUE_RETRIES: ${ESTOQUE_RETRIES:-1}
+      ESTOQUE_RETRY_BACKOFF_S: ${ESTOQUE_RETRY_BACKOFF_S:-0.2}
+      MENSAGEM_MAX_CHARS: ${MENSAGEM_MAX_CHARS:-500}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sctec-n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./n8n/workflow_estoque.json:/workflow_estoque.json:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      agente:
+        condition: service_healthy
+
+volumes:
+  n8n-data:
