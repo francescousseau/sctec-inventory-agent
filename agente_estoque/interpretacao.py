@@ -112,7 +112,9 @@ def criar_interpretador_llm(settings: Settings) -> Interpretador:
         google_api_key=settings.google_api_key,
         timeout=settings.llm_timeout_s,
         temperature=0,
-        max_retries=1,  # padrão é 6: com cota estourada só atrasaria o erro
+        # vira HttpRetryOptions(attempts=3): 3 tentativas no total, com backoff, em 408/429/5xx
+        # (o Gemini devolve 503 "high demand" com frequência); o padrão 6 atrasaria demais o erro
+        max_retries=3,
     ).with_structured_output(Interpretacao)
 
     def interpretar(mensagem: str) -> Interpretacao:
