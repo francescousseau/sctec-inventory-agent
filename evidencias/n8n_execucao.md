@@ -1,13 +1,15 @@
 # Evidência da troca de dados n8n ↔ aplicação Python
 
-- Gerado em: 2026-11-23T09:07:27
-- n8n 2.35.7 (npm) executado localmente, workflow `n8n/workflow_estoque.json` importado e **publicado** (URL do nó HTTP trocada de `host.docker.internal` para `127.0.0.1`, pois não havia contêiner).
-- Agente Python em `:8001` e API do professor (clone oficial) em `:8000`.
-- **Ressalva:** o interpretador usado foi um *servidor OpenAI-compatível falso* (sem LLM real). A troca Webhook → n8n → Python → API é real; a interpretação do LLM é simulada. Refazer com o LLM real antes da entrega.
+- Gerado em: 2026-11-23T11:08:15
+- Executado com `docker compose up --build -d`: n8n 2.48.8 (contêiner `sctec-n8n`) e agente Python (contêiner `sctec-agente-estoque`), workflow `n8n/workflow_estoque.json` importado e **publicado** sem alterações (nó HTTP → `http://agente:8001/analisar`).
+- LLM **real**: Gemini Developer API, modelo `gemini-3.5-flash-lite`. API do professor (clone oficial) no host em `:8000`, acessada pelo agente via `host.docker.internal`.
+- O n8n só chama a interface HTTP do agente; interpretação, consulta e classificação ficam no Python.
 
 Comando: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: application/json' -d '{"mensagem":"..."}'`
 
 ## `Como está o estoque do PRD-001?`
+
+HTTP 200
 
 ```json
 {
@@ -23,6 +25,8 @@ Comando: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: a
 
 ## `Como está o estoque do PRD-004?`
 
+HTTP 200
+
 ```json
 {
   "resposta": "Produto PRD-004 — Cabo HDMI 2 m (Cabos e Adaptadores)\nQuantidade disponível: 0 un | Estoque mínimo: 20 un\nSituação: ESGOTADO (quantidade igual a zero).\nFonte: GET /produtos/PRD-004 da API de estoque.",
@@ -37,6 +41,8 @@ Comando: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: a
 
 ## `Como está o estoque do PRD-503?`
 
+HTTP 200
+
 ```json
 {
   "resposta": "A API de estoque está indisponível no momento. Sem os dados não posso informar a situação do produto PRD-503; tente novamente mais tarde.",
@@ -49,7 +55,41 @@ Comando: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: a
 }
 ```
 
+## `Quanto temos do produto PRD-999?`
+
+HTTP 200
+
+```json
+{
+  "resposta": "Não encontrei o produto PRD-999 no estoque. Confira o código e tente novamente.",
+  "desfecho": "erro",
+  "codigo": "PRD-999",
+  "situacao": "",
+  "requer_atencao": false,
+  "api_consultada": true,
+  "caminho": "validar_entrada > interpretar > consultar_estoque > resposta_erro"
+}
+```
+
+## `Tem mouse sem fio no estoque?`
+
+HTTP 200
+
+```json
+{
+  "resposta": "Preciso do código do produto no formato PRD-XXX (ex.: PRD-001) para consultar o estoque. Consulto um produto por vez.\nMotivo: há produto citado pelo nome, mas sem código PRD-XXX.",
+  "desfecho": "esclarecimento",
+  "codigo": "",
+  "situacao": "",
+  "requer_atencao": false,
+  "api_consultada": false,
+  "caminho": "validar_entrada > interpretar > resposta_esclarecimento"
+}
+```
+
 ## `Qual é a capital da França?`
+
+HTTP 200
 
 ```json
 {
@@ -64,6 +104,8 @@ Comando: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: a
 ```
 
 ## `Como está o estoque do PRD-001? [agente Python DESLIGADO]`
+
+HTTP 200
 
 ```json
 {
