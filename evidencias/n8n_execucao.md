@@ -5,6 +5,20 @@
 - LLM **real**: Gemini Developer API, modelo `gemini-3.5-flash-lite`. API do professor (clone oficial) no host em `:8000`, acessada pelo agente via `host.docker.internal`.
 - O n8n só chama a interface HTTP do agente; interpretação, consulta e classificação ficam no Python.
 
+## Prints do editor do n8n
+
+**Canvas e lista de execuções** (Webhook → Agente LangGraph (HTTP) → Montar resposta → Responder ao Webhook):
+
+![Canvas do workflow com execuções](img/n8n_canvas_execucoes.png)
+
+**Nó HTTP na execução do PRD-001:** entrada vinda do Webhook (esquerda) e resposta do agente Python (direita), com `situacao: baixo`, dados do produto e o `caminho` do grafo:
+
+![Nó HTTP — PRD-001](img/n8n_no_http_prd001.png)
+
+**Nó HTTP com o agente desligado:** `getaddrinfo ENOTFOUND agente` (contêiner parado); o nó segue (`continueRegularOutput`) e o workflow responde `agente_indisponivel`:
+
+![Nó HTTP — agente desligado](img/n8n_no_http_agente_desligado.png)
+
 Comando: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: application/json' -d '{"mensagem":"..."}'`
 
 ## `Como está o estoque do PRD-001?`

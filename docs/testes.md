@@ -41,7 +41,7 @@ Executado com `docker compose up --build -d` (**n8n 2.48.8** e agente em contêi
 | PRD-001 com agente desligado | `agente_indisponivel` (n8n responde com fallback; não quebra) |
 
 ✅ Cadeia completa real: Webhook → n8n (contêiner) → agente (contêiner) → Gemini + API do professor (host, via `host.docker.internal`).
-⏳ Pendente (você): print do canvas/execução no editor do n8n (`http://localhost:5678`) para o vídeo.
+✅ Prints do canvas e das execuções (PRD-001 e agente desligado) em `evidencias/img/`, referenciados em `evidencias/n8n_execucao.md`.
 
 ## D. Verificações específicas do enunciado
 | Verificação | Resultado |
