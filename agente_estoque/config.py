@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # --- LLM (Gemini Developer API / Google AI Studio) ---
     google_api_key: SecretStr | None = None  # GOOGLE_API_KEY
-    gemini_model: str = "gemini-2.5-flash-lite"  # GEMINI_MODEL
+    gemini_model: str = "gemini-3.5-flash-lite"  # GEMINI_MODEL
     llm_timeout_s: float = 30.0
 
     # --- API de estoque (somente leitura) ---

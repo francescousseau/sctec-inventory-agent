@@ -201,7 +201,7 @@ Todas as configurações vêm de variáveis de ambiente ou do arquivo `.env` (nu
 | Variável | Padrão | Descrição |
 |---|---|---|
 | `GOOGLE_API_KEY` | — | Chave da Gemini Developer API ([criar](https://aistudio.google.com/apikey)). **Obrigatória.** |
-| `GEMINI_MODEL` | `gemini-2.5-flash-lite` | Modelo do Gemini. Chaves novas recebem 404 nesse modelo: use `gemini-3.5-flash-lite`. |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Modelo do Gemini (o `gemini-2.5-flash-lite` não está mais disponível para chaves novas). |
 | `LLM_TIMEOUT_S` | `30` | Tempo limite de cada chamada ao Gemini (segundos). |
 | `ESTOQUE_API_URL` | `http://127.0.0.1:8000` | URL da API de estoque. O `.env.example` traz `http://host.docker.internal:8000`, para uso no Docker. |
 | `ESTOQUE_TIMEOUT_S` | `5` | Tempo limite das chamadas à API de estoque. |
@@ -328,9 +328,9 @@ Detalhes em [`docs/testes.md`](docs/testes.md) e na [matriz de rastreabilidade](
 ## 🩺 Solução de problemas
 
 <details>
-<summary><b><code>llm_modelo_indisponivel</code> ou 404 "no longer available to new users"</b></summary>
+<summary><b><code>llm_modelo_indisponivel</code> (404)</b></summary>
 
-O modelo padrão não está liberado para a sua chave. No `.env`, use `GEMINI_MODEL=gemini-3.5-flash-lite`.
+O modelo em `GEMINI_MODEL` não existe ou não está liberado para a sua chave (por exemplo, o antigo `gemini-2.5-flash-lite`). Use o padrão `gemini-3.5-flash-lite` ou outro modelo listado no [AI Studio](https://aistudio.google.com/).
 
 </details>
 
