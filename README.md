@@ -34,7 +34,7 @@ SCTEC · C1 · Agentes de IA · T2
 - [Testes e evidências](#-testes-e-evidências)
 - [Solução de problemas](#-solução-de-problemas)
 - [Limitações](#-limitações)
-- [Estrutura do projeto](#-estrutura-do-projeto)
+- [Estrutura do projeto](#%EF%B8%8F-estrutura-do-projeto)
 - [Autor](#-autor)
 - [Licença](#-licença)
 
