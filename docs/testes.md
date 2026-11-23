@@ -60,10 +60,9 @@ python -m venv .venv && source .venv/bin/activate && pip install -r requirements
 python scripts/reset_data.py && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 # terminal 2 — agente
-cd sctec-inventory-agent && python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && cp .env.example .env   # edite GOOGLE_API_KEY
-pytest -v
-python scripts/executar_cenarios.py --llm real --api-url http://127.0.0.1:8000
+cd sctec-inventory-agent && uv sync && cp .env.example .env   # edite GOOGLE_API_KEY
+uv run pytest -v
+uv run python scripts/executar_cenarios.py --llm real --api-url http://127.0.0.1:8000
 
 # Docker Compose (agente + n8n)
 docker compose up --build -d
