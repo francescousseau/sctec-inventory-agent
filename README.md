@@ -1,25 +1,143 @@
-# Agente de Análise de Estoque — SCTEC C1 · Agentes de IA T2
+<div align="center">
 
-> **Integrantes:** _preencha (nome — contribuição)_ · **Vídeo demonstrativo:** _cole aqui o link (≤ 5 min)_
+# 📦 Agente de Análise de Estoque
 
-## 1. Problema e objetivo
-Responder, em linguagem natural, se um produto está **disponível**, com **estoque baixo** ou **esgotado**, consultando a API de estoque simulada do professor. Toda conclusão é verificável: a resposta sempre mostra produto, quantidade, mínimo e a regra aplicada, a partir dos dados retornados pela API.
+**Pergunte em linguagem natural. Receba a situação do estoque com os dados que a comprovam.**
 
-## 2. Tecnologias
-Python 3.11+ · LangGraph · LangChain (`langchain-google-genai`, cliente do Gemini) · FastAPI/uvicorn (interface HTTP) · httpx · Pydantic · n8n · pytest.
+SCTEC · C1 · Agentes de IA · T2
 
-**Provedor de LLM (decisão):** Gemini Developer API (Google AI Studio), via `ChatGoogleGenerativeAI` do `langchain-google-genai`.
-- `GOOGLE_API_KEY`: chave criada em <https://aistudio.google.com/apikey> (obrigatória; sem ela o agente responde com erro de configuração).
-- `GEMINI_MODEL`: modelo usado (padrão `gemini-2.5-flash-lite`). Chaves criadas recentemente no AI Studio recebem 404 nesse modelo; nesse caso use `GEMINI_MODEL=gemini-3.5-flash-lite`.
-- A intenção é obtida com **saída estruturada** (`with_structured_output(Interpretacao)`): o Gemini devolve um objeto validado pelo schema Pydantic (`intencao`, `codigo`, `motivo`), e as regras em Python (`validar_interpretacao`) ainda conferem o código antes de qualquer consulta.
-- Erros do Gemini têm desfechos distintos em `erro.tipo`: `llm_autenticacao` (chave inválida/sem permissão — o AI Studio devolve 400 `API_KEY_INVALID` ou 401/403), `llm_cota_excedida` (429 `RESOURCE_EXHAUSTED`), `llm_modelo_indisponivel` (404: modelo inexistente para a chave), `llm_indisponivel` (rede/outras falhas) e `saida_llm_invalida` (resposta fora do schema).
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/uv-pronto-DE5FE9?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-agente-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
+[![Gemini](https://img.shields.io/badge/Gemini-Developer%20API-8E75B2?logo=googlegemini&logoColor=white)](https://ai.google.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-HTTP-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![n8n](https://img.shields.io/badge/n8n-webhook-EA4B71?logo=n8n&logoColor=white)](https://n8n.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![Testes](https://img.shields.io/badge/testes-90%20passando-2EA44F?logo=pytest&logoColor=white)](docs/testes.md)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-yellow.svg)](LICENSE)
 
-## 3. Arquitetura
+🎬 **Vídeo demonstrativo:** _cole aqui o link (≤ 5 min)_
+
+</div>
+
+---
+
+## 📑 Sumário
+
+- [Visão geral](#-visão-geral)
+- [Início rápido](#-início-rápido)
+- [Como funciona](#-como-funciona)
+- [Configuração](#%EF%B8%8F-configuração)
+- [Execução](#%EF%B8%8F-execução)
+- [Automação com n8n](#-automação-com-n8n)
+- [Confiabilidade e segurança](#%EF%B8%8F-confiabilidade-e-segurança)
+- [Testes e evidências](#-testes-e-evidências)
+- [Solução de problemas](#-solução-de-problemas)
+- [Limitações](#-limitações)
+- [Estrutura do projeto](#%EF%B8%8F-estrutura-do-projeto)
+- [Autor](#-autor)
+- [Licença](#-licença)
+
+---
+
+## 🎯 Visão geral
+
+O agente responde se um produto está **disponível**, com **estoque baixo** ou **esgotado**, consultando a [API de estoque do professor](https://github.com/wangsouza/api-estoque).
+
+Toda conclusão é **verificável**: a resposta sempre mostra produto, quantidade, mínimo e a regra aplicada, a partir dos dados retornados pela API.
+
+```text
+👤  Como está o estoque do PRD-001?
+
+🤖  Produto PRD-001 — Mouse sem fio (Periféricos)
+    Quantidade disponível: 5 un | Estoque mínimo: 10 un
+    Situação: ESTOQUE BAIXO (quantidade 5 ≤ mínimo 10).
+    Fonte: GET /produtos/PRD-001 da API de estoque.
+```
+
+| Princípio | Como é garantido |
+|---|---|
+| 🧠 **O LLM só interpreta** | O Gemini extrai intenção e código; consulta, classificação e texto final são Python. |
+| 🔍 **Nada é inventado** | A situação vem dos dados da API; sem dados, não há classificação. |
+| 🔒 **Somente leitura** | Pedidos de cadastro, alteração ou "ignore as regras" encerram sem consultar a API. |
+| 🧩 **n8n só orquestra** | O n8n chama a interface HTTP do agente; toda a lógica fica no LangGraph. |
+
+---
+
+## 🚀 Início rápido
+
+> Pré-requisitos: [uv](https://docs.astral.sh/uv/getting-started/installation/) (ou Python 3.11+), uma chave do [Google AI Studio](https://aistudio.google.com/apikey) e a API do professor rodando em `:8000`.
+
+```bash
+git clone https://github.com/francescousseau/sctec-inventory-agent.git
+cd sctec-inventory-agent
+
+uv venv -p 3.12                       # cria o .venv
+uv pip install -r requirements.txt    # instala as dependências
+cp .env.example .env                  # preencha GOOGLE_API_KEY
+
+ESTOQUE_API_URL=http://127.0.0.1:8000 uv run python -m agente_estoque "Como está o estoque do PRD-001?"
+```
+
+<details>
+<summary><b>Sem uv (pip tradicional)</b></summary>
+
+```bash
+python -m venv .venv
+source .venv/bin/activate             # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env
+python -m agente_estoque "Como está o estoque do PRD-001?"
+```
+
+</details>
+
+<details>
+<summary><b>Subindo a API do professor (porta 8000)</b></summary>
+
+```bash
+git clone https://github.com/wangsouza/api-estoque.git && cd api-estoque
+uv venv && uv pip install -r requirements.txt
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000   # Swagger: http://127.0.0.1:8000/docs
+```
+
+`--host 0.0.0.0` permite que o agente em contêiner alcance a API via `host.docker.internal`.
+
+</details>
+
+---
+
+## 🧭 Como funciona
+
+### Fluxo de ponta a ponta
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant N as n8n (Webhook)
+    participant A as Agente (FastAPI + LangGraph)
+    participant G as Gemini API
+    participant E as API de estoque
+    U->>N: POST /webhook/estoque {"mensagem": "..."}
+    N->>A: POST /analisar
+    A->>G: interpreta a mensagem (saída estruturada)
+    G-->>A: {intencao, codigo, motivo}
+    A->>A: valida o código PRD-XXX em Python
+    A->>E: GET /produtos/{codigo}
+    E-->>A: quantidade_atual, estoque_minimo
+    A->>A: classifica em Python (disponível / baixo / esgotado)
+    A-->>N: resposta + dados + caminho percorrido
+    N-->>U: resposta final
+```
+
+### Grafo LangGraph
+
 ```mermaid
 flowchart TD
   S([START]) --> V[validar_entrada]
   V -->|inválida| E[resposta_erro]
-  V --> I["interpretar<br/>(LLM + validação em Python)"]
+  V --> I["interpretar<br/>(Gemini + validação em Python)"]
   I -->|erro do LLM| E
   I -->|esclarecer| RE[resposta_esclarecimento]
   I -->|fora_escopo| RF[resposta_fora_escopo]
@@ -30,111 +148,274 @@ flowchart TD
   K --> RP[resposta_produto]
   RP --> F([END]); RE --> F; RF --> F; E --> F
 ```
+
 - **Estado** (`estado.py`): `EstadoAgente` tipado (mensagem, intenção, código, produto, situação, erro, resposta, `caminho`).
-- **Decisão condicional** (`grafo.py::apos_interpretacao`): consultar a API × pedir esclarecimento × encerrar fora de escopo.
-- **Encerramento:** grafo finito (DAG); todos os caminhos chegam a `END`; execução ainda limitada por `recursion_limit=12`.
-- **Papel do LLM:** só interpreta (intenção + código). Consulta, classificação e texto final são Python ⇒ ele não inventa situação de estoque. A saída do LLM é validada: o código deve seguir `PRD-XXX`, aparecer **literalmente** na mensagem e ser o único; senão rebaixa para esclarecimento.
-- **Dados da API nunca voltam ao LLM** (o LLM só vê a mensagem do usuário, delimitada em `<mensagem_usuario>`), evitando injeção por dados.
+- **Decisão condicional** (`grafo.py::apos_interpretacao`): consultar a API, pedir esclarecimento ou encerrar fora de escopo.
+- **Encerramento:** grafo finito (DAG); todos os caminhos chegam a `END`, e a execução ainda é limitada por `recursion_limit=12`.
+- **Validação da saída do LLM:** o código deve seguir `PRD-XXX`, aparecer **literalmente** na mensagem e ser o único; senão, o agente pede esclarecimento.
+- **Dados da API nunca voltam ao LLM:** o Gemini só vê a mensagem do usuário, delimitada em `<mensagem_usuario>`, o que evita injeção por dados.
+
+### Interpretação com Gemini
+
+O cliente é o `ChatGoogleGenerativeAI` do `langchain-google-genai`, com **saída estruturada**:
+
+```python
+ChatGoogleGenerativeAI(model=settings.gemini_model, ...).with_structured_output(Interpretacao)
+```
+
+O Gemini devolve um objeto validado pelo schema Pydantic (`intencao`, `codigo`, `motivo`), e `validar_interpretacao` confere o código antes de qualquer consulta.
 
 ### Ferramenta de estoque (`estoque_tool.py::buscar_produto`)
+
 | Item | Definição |
 |---|---|
 | Finalidade | `GET {ESTOQUE_API_URL}/produtos/{codigo}` (somente leitura) |
 | Parâmetro | `codigo`: `PRD-XXX` (regex `PRD-[0-9]{3}`, validado antes de montar a URL) |
-| Retorno | `ProdutoEstoque` (codigo, nome, categoria, quantidade_atual, estoque_minimo, unidade), validado com tipos estritos |
+| Retorno | `ProdutoEstoque` (codigo, nome, categoria, quantidade_atual, estoque_minimo, unidade), com tipos estritos |
 | Falhas | `CodigoInvalido`, `ProdutoNaoEncontrado` (404), `ServicoIndisponivel` (503/5xx/timeout/conexão), `RespostaInvalida` (JSON/estrutura/status inesperado/produto divergente) |
 | Robustez | timeout; 1 retentativa só em falha de rede; sem redirecionamentos; URL-base configurável e fixa |
 
-### Regra de classificação (`classificador.py`) — confirmada no README da API (§5)
+### Regra de classificação (`classificador.py`)
+
+Confirmada no README da API do professor (§5):
+
 | Condição | Situação |
 |---|---|
-| `quantidade == 0` | **Esgotado** |
-| `0 < quantidade <= mínimo` | **Baixo** (igual ao mínimo conta como baixo) |
-| `quantidade > mínimo` | **Disponível** |
+| `quantidade == 0` | 🔴 **Esgotado** |
+| `0 < quantidade <= mínimo` | 🟡 **Baixo** (igual ao mínimo conta como baixo) |
+| `quantidade > mínimo` | 🟢 **Disponível** |
 
-Dados ausentes/negativos/de tipo errado ⇒ erro controlado, sem classificação presumida.
+Dados ausentes, negativos ou de tipo errado geram erro controlado, sem classificação presumida.
 
-## 4. Configuração e execução
+---
+
+## ⚙️ Configuração
+
+Todas as configurações vêm de variáveis de ambiente ou do arquivo `.env` (nunca versionado).
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `GOOGLE_API_KEY` | — | Chave da Gemini Developer API ([criar](https://aistudio.google.com/apikey)). **Obrigatória.** |
+| `GEMINI_MODEL` | `gemini-2.5-flash-lite` | Modelo do Gemini. Chaves novas recebem 404 nesse modelo: use `gemini-3.5-flash-lite`. |
+| `LLM_TIMEOUT_S` | `30` | Tempo limite de cada chamada ao Gemini (segundos). |
+| `ESTOQUE_API_URL` | `http://127.0.0.1:8000` | URL da API de estoque. O `.env.example` traz `http://host.docker.internal:8000`, para uso no Docker. |
+| `ESTOQUE_TIMEOUT_S` | `5` | Tempo limite das chamadas à API de estoque. |
+| `ESTOQUE_RETRIES` | `1` | Novas tentativas só em falha de rede ou timeout. |
+| `ESTOQUE_RETRY_BACKOFF_S` | `0.2` | Espera entre as tentativas. |
+| `MENSAGEM_MAX_CHARS` | `500` | Tamanho máximo da pergunta. |
+
+---
+
+## ▶️ Execução
+
+### CLI
+
 ```bash
-# 1) API do professor (porta 8000)
-git clone https://github.com/wangsouza/api-estoque.git && cd api-estoque
-python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000      # Swagger: http://127.0.0.1:8000/docs
+uv run python -m agente_estoque "Como está o estoque do PRD-001?"
+uv run python -m agente_estoque "Tem PRD-004 no estoque?" --json   # estado completo
+uv run python -m agente_estoque "E o PRD-005?" -v                  # com logs
+```
 
-# 2) Este projeto
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env        # preencha GOOGLE_API_KEY (GEMINI_MODEL é opcional)
-# fora do Docker, aponte para a API local: ESTOQUE_API_URL=http://127.0.0.1:8000
+### Interface HTTP
 
-# 3) Uso
-python -m agente_estoque "Como está o estoque do PRD-001?"            # CLI
-uvicorn --factory agente_estoque.servidor:criar_app --port 8001       # interface HTTP
+```bash
+uv run uvicorn --factory agente_estoque.servidor:criar_app --port 8001
+
 curl -s -X POST localhost:8001/analisar -H 'Content-Type: application/json' \
      -d '{"mensagem":"Como está o estoque do PRD-004?"}'
 ```
 
-### Execução com Docker Compose
-Com Docker Desktop ativo e a API do professor em `127.0.0.1:8000`:
+A resposta inclui `resposta`, `desfecho`, `situacao`, `produto`, `api_consultada`, `caminho` (nós percorridos) e `erro`, para auditoria. Documentação interativa em `http://127.0.0.1:8001/docs`.
+
+### 🐳 Docker Compose (agente + n8n)
+
+Com o Docker Desktop ativo e a API do professor em `:8000`:
 
 ```bash
-cp .env.example .env
-# preencha GOOGLE_API_KEY no arquivo .env
+cp .env.example .env        # preencha GOOGLE_API_KEY
 docker compose up --build -d
 ```
 
-Serviços disponíveis:
+| Serviço | Endereço |
+|---|---|
+| Agente | http://localhost:8001/health |
+| n8n | http://localhost:5678 |
+| API do professor (host) | http://localhost:8000 |
 
-- Agente: `http://localhost:8001/health`
-- n8n: `http://localhost:5678`
-- API do professor: `http://localhost:8000`
+O Compose usa `host.docker.internal` para o agente alcançar a API no host. Para parar: `docker compose down` (os dados do n8n ficam no volume `n8n-data`).
 
-No n8n, importe `n8n/workflow_estoque.json` e publique/ative o workflow.
-O workflow usa `http://agente:8001/analisar` na rede interna do Compose.
-O Compose usa `host.docker.internal` para o agente alcançar a API do host.
-Para parar: `docker compose down`. Os dados do n8n ficam no volume `n8n-data`.
-**Windows (PowerShell):** troque `source .venv/bin/activate` por `.venv\Scripts\Activate.ps1`; para `curl` use `curl.exe` ou o Swagger do agente em `http://127.0.0.1:8001/docs`.
+---
 
-### Exemplo de resposta
-```text
-Produto PRD-001 — Mouse sem fio (Periféricos)
-Quantidade disponível: 5 un | Estoque mínimo: 10 un
-Situação: ESTOQUE BAIXO (quantidade 5 ≤ mínimo 10).
-Fonte: GET /produtos/PRD-001 da API de estoque.
+## 🔗 Automação com n8n
+
+**Fluxo:** `Webhook (POST /webhook/estoque)` → `HTTP Request (POST /analisar)` → `Set (monta resposta + requer_atencao)` → `Respond to Webhook`.
+
+O n8n **não decide nada**: LLM, estado, ferramenta e classificação ficam no LangGraph. Se o agente estiver fora do ar, o n8n responde com `desfecho: agente_indisponivel`.
+
+![Workflow no n8n com execuções](evidencias/img/n8n_canvas_execucoes.png)
+
+1. No n8n, importe `n8n/workflow_estoque.json` (*Workflows → Import from file*) e publique o workflow.
+2. **URL do nó HTTP:** o arquivo usa `http://agente:8001/analisar`, o nome do serviço no Compose.
+   - n8n em contêiner avulso: `http://host.docker.internal:8001/analisar`
+   - n8n direto no host (npm): `http://127.0.0.1:8001/analisar`
+3. Teste:
+
+```bash
+curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: application/json' \
+     -d '{"mensagem":"Como está o estoque do PRD-004?"}'
 ```
-A resposta HTTP (`POST /analisar`) inclui também `desfecho`, `situacao`, `produto`, `api_consultada` e `caminho` (nós percorridos) para auditoria.
 
-## 5. Automação n8n (`n8n/workflow_estoque.json`)
-**Finalidade:** expor o agente por Webhook. **Fluxo:** `Webhook (POST /webhook/estoque)` → `HTTP Request (POST /analisar do agente)` → `Set (monta resposta + requer_atencao)` → `Respond to Webhook`. O n8n não decide nada: LLM, estado, ferramenta e classificação ficam no LangGraph. Se o agente estiver fora do ar, o n8n responde com `desfecho: agente_indisponivel`.
+No modo de teste do editor, use `/webhook-test/estoque`. Evidência completa: [`evidencias/n8n_execucao.md`](evidencias/n8n_execucao.md).
 
-1. Importe o JSON (Workflows → Import from file) e ative o workflow.
-2. **URL do nó HTTP:** o arquivo usa `http://agente:8001/analisar` (nome do serviço na rede do Docker Compose). Com n8n em contêiner avulso, troque por `http://host.docker.internal:8001/analisar`; com n8n direto no host (npm), por `http://127.0.0.1:8001/analisar`.
-3. Docker no Linux: `docker run --add-host=host.docker.internal:host-gateway -p 5678:5678 n8nio/n8n` e inicie o agente com `--host 0.0.0.0` (a API não tem autenticação: só em ambiente de desenvolvimento controlado).
-4. Teste: `curl -X POST http://127.0.0.1:5678/webhook/estoque -H 'Content-Type: application/json' -d '{"mensagem":"Como está o estoque do PRD-004?"}'` (em modo de teste do editor, use `/webhook-test/estoque`).
+---
 
-Evidência: `evidencias/n8n_execucao.md`.
+## 🛡️ Confiabilidade e segurança
 
-## 6. Confiabilidade, segurança e supervisão
-- Validação de entrada (vazia, longa, caracteres de controle) e de parâmetros da ferramenta.
-- Falhas (404, 503, rede, resposta inválida, LLM sem autenticação/sem cota/indisponível/ilegível) ⇒ resposta controlada, **sem classificar nem inventar**.
-- Condição de parada: grafo finito + `recursion_limit`.
-- Credenciais só em variáveis de ambiente; `.env` ignorado no Git; chave nunca é logada.
-- Limites de atuação: o agente é **somente leitura** (o `POST /produtos` da API não é exposto); pedidos de cadastro/alteração/“ignore as regras” encerram sem consultar a API. Por não haver ação que modifique dados, não há etapa de confirmação humana a demonstrar.
+- **Entrada validada:** mensagem vazia, longa demais ou com caracteres de controle é recusada antes do LLM.
+- **Saída do LLM validada** antes de rotear o grafo ou chamar a ferramenta.
+- **Falhas viram respostas controladas**, sem classificar nem inventar:
 
-## 7. Testes
-`python -m pytest -v` (90 testes; os de integração exigem a API em `:8000`) e `python scripts/executar_cenarios.py --llm real` (cenários com entrada, esperado, observado e dados brutos da API; resultado com Gemini real em [`evidencias/cenarios_real.md`](evidencias/cenarios_real.md), 11/11). Detalhes e resultados: [`docs/testes.md`](docs/testes.md); matriz de critérios: [`docs/matriz_rastreabilidade.md`](docs/matriz_rastreabilidade.md).
+| Origem | `erro.tipo` | Quando acontece |
+|---|---|---|
+| Gemini | `llm_autenticacao` | Chave inválida ou sem permissão (400 `API_KEY_INVALID`, 401, 403) |
+| Gemini | `llm_cota_excedida` | Limite de uso atingido (429 `RESOURCE_EXHAUSTED`) |
+| Gemini | `llm_modelo_indisponivel` | Modelo inexistente para a chave (404) |
+| Gemini | `llm_indisponivel` | Rede ou 5xx (após 3 tentativas com backoff) |
+| Gemini | `saida_llm_invalida` | Resposta fora do schema |
+| Config. | `configuracao_ausente` | `GOOGLE_API_KEY` não definida |
+| API | `produto_nao_encontrado` | 404 da API de estoque |
+| API | `servico_indisponivel` | 503, 5xx, timeout ou API fora do ar |
+| API | `resposta_invalida` | JSON ou estrutura inesperados |
+| Dados | `dados_invalidos` | Quantidade ou mínimo inconsistentes |
 
-## 8. Limitações
-- Consulta **um produto por vez, por código `PRD-XXX`**; perguntas só pelo nome pedem o código (não há busca por nome).
-- Não lista nem compara produtos; não cadastra (decisão de escopo/segurança).
-- Qualidade da interpretação depende do LLM escolhido; a validação em Python impede consultas com códigos que não estejam no texto, mas pode pedir esclarecimento em casos como “prd 1”.
+- **Condição de parada:** grafo finito + `recursion_limit`.
+- **Segredos:** só em variáveis de ambiente; `.env` ignorado no Git; a chave nunca é registrada em log.
+- **Limites de atuação:** o agente é somente leitura (o `POST /produtos` da API não é exposto). Como nenhuma ação modifica dados, não há etapa de confirmação humana a demonstrar.
+
+---
+
+## 🧪 Testes e evidências
+
+```bash
+uv run pytest -v                                                           # 90 testes
+uv run pytest -m integracao -v                                             # só integração (API em :8000)
+uv run python scripts/executar_cenarios.py --llm real --api-url http://127.0.0.1:8000
+```
+
+| Evidência | Resultado |
+|---|---|
+| Suíte automatizada | ✅ 90 testes (81 unitários + 9 de integração com a API real) |
+| [Cenários com Gemini real](evidencias/cenarios_real.md) | ✅ 11/11 (3 obrigatórios + 8 complementares) |
+| [n8n ↔ agente ↔ API via Docker Compose](evidencias/n8n_execucao.md) | ✅ 7 chamadas, incluindo agente desligado |
+
+**Cenários obrigatórios:**
+
+| # | Entrada | Resultado |
+|---|---|---|
+| 1 | "Qual a situação do estoque do produto PRD-001?" | 🟡 Estoque baixo (5 ≤ 10) |
+| 2 | "Quanto temos do produto PRD-999?" | ❌ Produto não encontrado, sem classificação |
+| 3 | "Como está o estoque do PRD-503?" / API fora do ar | ⚠️ Serviço indisponível, resposta controlada |
+
+Detalhes em [`docs/testes.md`](docs/testes.md) e na [matriz de rastreabilidade](docs/matriz_rastreabilidade.md).
+
+---
+
+## 🩺 Solução de problemas
+
+<details>
+<summary><b><code>llm_modelo_indisponivel</code> ou 404 "no longer available to new users"</b></summary>
+
+O modelo padrão não está liberado para a sua chave. No `.env`, use `GEMINI_MODEL=gemini-3.5-flash-lite`.
+
+</details>
+
+<details>
+<summary><b><code>llm_indisponivel</code> de vez em quando</b></summary>
+
+Em picos de demanda, o Gemini devolve `503 UNAVAILABLE`. O agente já tenta 3 vezes com backoff; se persistir, aguarde alguns instantes e repita a pergunta.
+
+</details>
+
+<details>
+<summary><b><code>llm_autenticacao</code></b></summary>
+
+A `GOOGLE_API_KEY` está errada, revogada ou sem permissão. Gere outra em <https://aistudio.google.com/apikey> e atualize o `.env` (nunca o `.env.example`).
+
+</details>
+
+<details>
+<summary><b><code>servico_indisponivel</code> rodando fora do Docker</b></summary>
+
+O `.env.example` aponta para `host.docker.internal`, que só existe dentro do Docker. Fora dele, use `ESTOQUE_API_URL=http://127.0.0.1:8000`.
+
+</details>
+
+<details>
+<summary><b>n8n responde <code>agente_indisponivel</code></b></summary>
+
+Confira `docker compose ps` (o agente deve estar `healthy`) e se o workflow está publicado. Com o Compose, a URL do nó HTTP deve ser `http://agente:8001/analisar`.
+
+</details>
+
+<details>
+<summary><b>Windows</b></summary>
+
+Ative o ambiente com `.venv\Scripts\Activate.ps1`. Para `curl`, use `curl.exe` ou o Swagger do agente em `http://127.0.0.1:8001/docs`.
+
+</details>
+
+---
+
+## 🚧 Limitações
+
+- Consulta **um produto por vez, pelo código `PRD-XXX`**; perguntas só pelo nome pedem o código (não há busca por nome).
+- Não lista, não compara e não cadastra produtos (decisão de escopo e segurança).
+- A validação em Python impede consultas com códigos que não estejam no texto, mas pode pedir esclarecimento em casos como "prd 1".
 - Sem autenticação entre n8n e agente (uso didático local).
-- Depende da disponibilidade da Gemini API: em picos de demanda ela devolve 503; o agente tenta até 3 vezes com backoff e, se persistir, responde `llm_indisponivel` sem consultar nem classificar.
+- Depende da disponibilidade da Gemini API.
 
-## 9. Estrutura
+---
+
+## 🗂️ Estrutura do projeto
+
+```text
+sctec-inventory-agent/
+├── agente_estoque/
+│   ├── config.py           # variáveis de ambiente (.env)
+│   ├── instrucoes.py       # prompt: papel, objetivo, contexto e restrições
+│   ├── interpretacao.py    # Gemini + saída estruturada + validação
+│   ├── estoque_tool.py     # ferramenta somente leitura da API
+│   ├── classificador.py    # regra disponível / baixo / esgotado
+│   ├── estado.py           # estado tipado do grafo
+│   ├── grafo.py            # grafo LangGraph
+│   ├── respostas.py        # textos das respostas
+│   ├── agente.py           # montagem e execução
+│   ├── servidor.py         # FastAPI (POST /analisar, GET /health)
+│   ├── __main__.py         # CLI
+│   └── simulado.py         # interpretador de regras (só testes)
+├── n8n/workflow_estoque.json
+├── scripts/executar_cenarios.py
+├── tests/                  # 90 testes (pytest)
+├── evidencias/             # cenários, execução n8n e prints
+├── docs/                   # testes, rastreabilidade, roteiro do vídeo
+├── Dockerfile · compose.yaml · requirements.txt · .env.example
+└── LICENSE
 ```
-agente_estoque/  config · instrucoes · interpretacao · estoque_tool · classificador
-                 estado · grafo · respostas · agente · servidor · __main__ · simulado(*)
-n8n/workflow_estoque.json     scripts/executar_cenarios.py     tests/     evidencias/     docs/
-(*) interpretador de regras usado só em testes/cenários simulados; o servidor nunca o usa.
-```
+
+---
+
+## 👤 Autor
+
+**Francesco Cristiano Cousseau**: trabalho individual (arquitetura, implementação, testes, automação n8n e documentação).
+
+[![GitHub](https://img.shields.io/badge/GitHub-francescousseau-181717?logo=github)](https://github.com/francescousseau)
+
+---
+
+## 📄 Licença
+
+Distribuído sob a licença **MIT**. Veja [`LICENSE`](LICENSE).
+
+<div align="center">
+<sub>Feito para a disciplina de Agentes de IA · SCTEC · 2026</sub>
+</div>
