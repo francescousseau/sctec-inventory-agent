@@ -73,7 +73,7 @@ cd sctec-inventory-agent
 uv sync                               # cria o .venv (Python 3.12) e instala as versões travadas no uv.lock
 cp .env.example .env                  # preencha GOOGLE_API_KEY
 
-ESTOQUE_API_URL=http://127.0.0.1:8000 uv run python -m agente_estoque "Como está o estoque do PRD-001?"
+uv run python -m agente_estoque "Como está o estoque do PRD-001?"
 ```
 
 O `uv sync` lê o `pyproject.toml` (dependências), o `uv.lock` (versões exatas) e o `.python-version` (3.12). O `uv run` mantém o ambiente sincronizado antes de cada comando.
@@ -203,7 +203,7 @@ Todas as configurações vêm de variáveis de ambiente ou do arquivo `.env` (nu
 | `GOOGLE_API_KEY` | — | Chave da Gemini Developer API ([criar](https://aistudio.google.com/apikey)). **Obrigatória.** |
 | `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Modelo do Gemini (o `gemini-2.5-flash-lite` não está mais disponível para chaves novas). |
 | `LLM_TIMEOUT_S` | `30` | Tempo limite de cada chamada ao Gemini (segundos). |
-| `ESTOQUE_API_URL` | `http://127.0.0.1:8000` | URL da API de estoque. O `.env.example` traz `http://host.docker.internal:8000`, para uso no Docker. |
+| `ESTOQUE_API_URL` | `http://127.0.0.1:8000` | URL da API de estoque. No Docker Compose é fixada em `http://host.docker.internal:8000`. |
 | `ESTOQUE_TIMEOUT_S` | `5` | Tempo limite das chamadas à API de estoque. |
 | `ESTOQUE_RETRIES` | `1` | Novas tentativas só em falha de rede ou timeout. |
 | `ESTOQUE_RETRY_BACKOFF_S` | `0.2` | Espera entre as tentativas. |
@@ -349,9 +349,9 @@ A `GOOGLE_API_KEY` está errada, revogada ou sem permissão. Gere outra em <http
 </details>
 
 <details>
-<summary><b><code>servico_indisponivel</code> rodando fora do Docker</b></summary>
+<summary><b><code>servico_indisponivel</code> ("A API de estoque está indisponível")</b></summary>
 
-O `.env.example` aponta para `host.docker.internal`, que só existe dentro do Docker. Fora dele, use `ESTOQUE_API_URL=http://127.0.0.1:8000`.
+A API do professor não está rodando ou não responde em `ESTOQUE_API_URL`. Confira com `curl http://127.0.0.1:8000/health` e, se preciso, suba a API (veja *Subindo a API do professor*).
 
 </details>
 

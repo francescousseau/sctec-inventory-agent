@@ -8,6 +8,7 @@ grafo ou chamar a ferramenta.
 from __future__ import annotations
 
 import re
+import warnings
 from typing import Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -31,6 +32,9 @@ class Interpretacao(BaseModel):
 
 
 Interpretador = Callable[[str], Interpretacao]
+
+# os modelos gemini-3.x ignoram temperature e avisam a cada chamada; mantemos temperature=0 para os modelos que a aceitam
+warnings.filterwarnings("ignore", message=r"Model '.*' uses fixed sampling defaults")
 
 
 class ErroInterpretador(Exception):

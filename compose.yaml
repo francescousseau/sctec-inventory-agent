@@ -5,7 +5,8 @@ services:
     ports:
       - "8001:8001"
     environment:
-      ESTOQUE_API_URL: ${ESTOQUE_API_URL:-http://host.docker.internal:8000}
+      # fixo: dentro do contêiner a API do host só é alcançável por host.docker.internal
+      ESTOQUE_API_URL: http://host.docker.internal:8000
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       LLM_TIMEOUT_S: ${LLM_TIMEOUT_S:-30}
