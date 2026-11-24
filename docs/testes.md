@@ -29,6 +29,7 @@ Gerados por `python scripts/executar_cenarios.py --llm real --api-url http://127
 
 ### Prints da execução local
 - `evidencias/img/swagger_api_estoque.png`: API do professor no ar (Swagger em `http://127.0.0.1:8000/docs`).
+- `evidencias/img/swagger_get_prd001.png`: `GET /produtos/PRD-001` executado no Swagger → HTTP 200, `quantidade_atual: 5`, `estoque_minimo: 10`.
 - `evidencias/img/cli_prd001.png`: `uv run python -m agente_estoque "Como está o estoque do PRD-001?"` → ESTOQUE BAIXO (5 ≤ 10), caminho completo do grafo.
 
 ## C. Integração n8n ↔ Python ↔ API (`evidencias/n8n_execucao.md`)

@@ -321,9 +321,11 @@ uv run python scripts/executar_cenarios.py --llm real --api-url http://127.0.0.1
 | 2 | "Quanto temos do produto PRD-999?" | ❌ Produto não encontrado, sem classificação |
 | 3 | "Como está o estoque do PRD-503?" / API fora do ar | ⚠️ Serviço indisponível, resposta controlada |
 
-**Execução real:** a API do professor no ar (Swagger) e o agente respondendo pela CLI com os dados dela:
+**Execução real:** a API do professor no ar, o dado bruto do PRD-001 e o agente classificando a partir dele:
 
 ![Swagger da API de estoque do professor](evidencias/img/swagger_api_estoque.png)
+
+![GET /produtos/PRD-001 no Swagger: quantidade_atual 5, estoque_minimo 10](evidencias/img/swagger_get_prd001.png)
 
 ![CLI do agente consultando o PRD-001](evidencias/img/cli_prd001.png)
 
