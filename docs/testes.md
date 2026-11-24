@@ -27,6 +27,10 @@ Gerados por `python scripts/executar_cenarios.py --llm real --api-url http://127
 > ✅ LLM, ferramenta, grafo e API são todos reais nesses registros.
 > **Observação de robustez:** nas primeiras rodadas o Gemini devolveu `503 UNAVAILABLE` ("high demand") em parte das chamadas. O agente respondeu de forma controlada (`llm_indisponivel`, sem consultar a API nem classificar). Para reduzir isso, o cliente passou a fazer até 3 tentativas com backoff (`max_retries=3` em `interpretacao.py`); a rodada registrada passou 11/11.
 
+### Prints da execução local
+- `evidencias/img/swagger_api_estoque.png`: API do professor no ar (Swagger em `http://127.0.0.1:8000/docs`).
+- `evidencias/img/cli_prd001.png`: `uv run python -m agente_estoque "Como está o estoque do PRD-001?"` → ESTOQUE BAIXO (5 ≤ 10), caminho completo do grafo.
+
 ## C. Integração n8n ↔ Python ↔ API (`evidencias/n8n_execucao.md`)
 Executado com `docker compose up --build -d` (**n8n 2.48.8** e agente em contêineres, **Gemini real**), workflow importado e publicado sem alterações (nó HTTP → `http://agente:8001/analisar`):
 
